@@ -1,0 +1,23 @@
+Statistic,Value
+n,99
+Mean Sleep (h),6.4187
+SD Sleep (h),1.0863
+Median Sleep (h),6.5
+Q1 Sleep,5.5
+Q3 Sleep,7.0
+IQR Sleep,1.5
+% sleeping ≥8h,12.1%
+Mean GPA,3.5294
+SD GPA,0.3401
+95% CI Mean Sleep (lo),6.202
+95% CI Mean Sleep (hi),6.6353
+t-stat (vs 8h),-14.4837
+p-value (vs 8h),0.0
+r (sleep–GPA),-0.0106
+r² (sleep–GPA),0.0001
+Slope b₁,-0.003309
+p-value (slope),0.917318
+GPA mean (<7h sleep),3.5303
+GPA mean (≥7h sleep),3.5284
+t-stat (two-sample),0.0276
+p-value (two-sample),0.978

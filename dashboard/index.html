@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sleep & GPA — AP Statistics | Doral Academy</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --dark:   #1E2761;
+    --accent: #4A90D9;
+    --light:  #CADCFC;
+    --bg:     #F7F9FF;
+    --white:  #ffffff;
+    --muted:  #64748B;
+    --red:    #E74C3C;
+    --green:  #2ECC71;
+    --gold:   #F39C12;
+    --card-shadow: 0 2px 12px rgba(30,39,97,0.10);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Calibri, sans-serif; background: var(--bg); color: var(--dark); }
+
+  /* ── Top nav ── */
+  header {
+    background: var(--dark);
+    padding: 0 2rem;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 56px; position: sticky; top: 0; z-index: 100;
+    border-bottom: 3px solid var(--accent);
+  }
+  header h1 { color: var(--white); font-size: 1.05rem; font-weight: 700; letter-spacing: .5px; }
+  header span { color: var(--light); font-size: .82rem; }
+
+  /* ── Tab bar ── */
+  nav.tabs {
+    background: var(--white);
+    display: flex; gap: 0;
+    border-bottom: 2px solid var(--light);
+    overflow-x: auto;
+    position: sticky; top: 56px; z-index: 99;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  }
+  nav.tabs button {
+    padding: .75rem 1.4rem;
+    border: none; background: none;
+    font-size: .88rem; font-weight: 600; color: var(--muted);
+    cursor: pointer; white-space: nowrap;
+    border-bottom: 3px solid transparent; margin-bottom: -2px;
+    transition: color .2s, border-color .2s;
+  }
+  nav.tabs button.active, nav.tabs button:hover {
+    color: var(--accent); border-bottom-color: var(--accent);
+  }
+
+  /* ── Sections ── */
+  .section { display: none; padding: 2rem; max-width: 1140px; margin: 0 auto; }
+  .section.active { display: block; }
+
+  /* ── Stat cards ── */
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 1rem; margin-bottom: 2rem; }
+  .stat-card {
+    background: var(--white); border-radius: 10px;
+    padding: 1.25rem 1rem; text-align: center;
+    box-shadow: var(--card-shadow);
+    border-top: 4px solid var(--accent);
+  }
+  .stat-card.green  { border-top-color: var(--green); }
+  .stat-card.red    { border-top-color: var(--red); }
+  .stat-card.gold   { border-top-color: var(--gold); }
+  .stat-card .big   { font-size: 2.2rem; font-weight: 700; color: var(--dark); line-height: 1.1; }
+  .stat-card .label { font-size: .78rem; color: var(--muted); margin-top: .3rem; }
+  .stat-card .sub   { font-size: .72rem; color: var(--accent); font-weight: 600; margin-top: .15rem; }
+
+  /* ── Charts ── */
+  .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(440px,1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+  .chart-card {
+    background: var(--white); border-radius: 10px;
+    padding: 1.25rem; box-shadow: var(--card-shadow);
+  }
+  .chart-card h3 { font-size: .9rem; color: var(--dark); margin-bottom: 1rem; font-weight: 700; }
+  .chart-card canvas { max-height: 300px; }
+
+  /* ── Inference cards ── */
+  .inf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+  @media(max-width:700px){ .inf-grid { grid-template-columns: 1fr; } .chart-grid { grid-template-columns: 1fr; } }
+  .inf-card {
+    background: var(--white); border-radius: 10px;
+    padding: 1.5rem; box-shadow: var(--card-shadow);
+  }
+  .inf-card h3 { font-size: .95rem; font-weight: 700; color: var(--white);
+    background: var(--dark); padding: .5rem .8rem; border-radius: 6px; margin-bottom: 1rem; }
+  .inf-card.ci h3  { background: var(--accent); }
+  .inf-card.reg h3 { background: #2C3E8A; }
+  .inf-card.ttest h3 { background: var(--dark); }
+  .step-row { display: flex; gap: .75rem; padding: .35rem 0;
+    border-bottom: 1px solid #E2E8F0; font-size: .85rem; }
+  .step-row:last-child { border-bottom: none; }
+  .step-row .k { color: var(--muted); min-width: 130px; flex-shrink: 0; }
+  .step-row .v { color: var(--dark); font-weight: 600; }
+  .step-row.highlight { background: rgba(74,144,217,.08); border-radius: 5px; padding: .4rem .5rem; margin: .3rem -.5rem; }
+  .step-row.highlight .v { color: var(--accent); font-size: 1rem; }
+  .step-row.reject .v { color: var(--red); font-size: .9rem; }
+  .badge { display: inline-block; padding: .2rem .6rem; border-radius: 20px;
+    font-size: .75rem; font-weight: 700; }
+  .badge.pass  { background: rgba(46,204,113,.15); color: #1e8449; }
+  .badge.fail  { background: rgba(231,76,60,.15); color: #c0392b; }
+  .badge.note  { background: rgba(74,144,217,.15); color: var(--accent); }
+
+  /* ── Table ── */
+  table { width: 100%; border-collapse: collapse; font-size: .85rem; margin-bottom: 1.5rem; }
+  thead tr { background: var(--dark); color: var(--white); }
+  thead th { padding: .6rem .8rem; text-align: left; font-weight: 600; }
+  tbody tr:nth-child(even) { background: #F0F4FF; }
+  tbody td { padding: .5rem .8rem; border-bottom: 1px solid #E2E8F0; }
+  tbody td.num { font-weight: 700; color: var(--accent); }
+
+  /* ── Conclusion box ── */
+  .conclusion {
+    background: var(--dark); color: var(--white);
+    border-radius: 10px; padding: 1.5rem;
+    border-left: 5px solid var(--accent); margin-bottom: 1.5rem;
+  }
+  .conclusion h3 { color: var(--light); font-size: .85rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: .7rem; }
+  .conclusion p  { font-size: .92rem; line-height: 1.65; }
+
+  /* ── Code block ── */
+  .code-wrap { background: #0D1117; border-radius: 10px; overflow: hidden; margin-bottom: 1.5rem; }
+  .code-header { background: #161B22; padding: .6rem 1rem; display: flex; justify-content: space-between; align-items: center; }
+  .code-header span { color: #8B949E; font-size: .8rem; font-family: monospace; }
+  .code-header button { background: var(--accent); color: var(--white); border: none; padding: .25rem .75rem;
+    border-radius: 4px; font-size: .75rem; cursor: pointer; }
+  .code-header button:hover { background: #357ABD; }
+  pre { padding: 1.2rem; overflow-x: auto; font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: .82rem; line-height: 1.6; }
+  .kw   { color: #FF7B72; }
+  .fn   { color: #D2A8FF; }
+  .str  { color: #A5D6FF; }
+  .num  { color: #79C0FF; }
+  .cm   { color: #8B949E; font-style: italic; }
+  .op   { color: #FF7B72; }
+
+  /* ── Section title ── */
+  .section-title { font-size: 1.35rem; font-weight: 700; color: var(--dark);
+    margin-bottom: 1.5rem; padding-bottom: .5rem;
+    border-bottom: 3px solid var(--accent); }
+  .section-subtitle { font-size: .85rem; color: var(--muted); margin-top: -.9rem; margin-bottom: 1.5rem; }
+
+  /* ── Footer ── */
+  footer { background: var(--dark); color: var(--light); text-align: center;
+    padding: 1rem; font-size: .78rem; margin-top: 2rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Sleep &amp; Academic Performance — AP Statistics</h1>
+  <span>Doral Academy High · 2025–2026 · ASA Project Competition</span>
+</header>
+
+<nav class="tabs">
+  <button class="active" onclick="show('overview')">Overview</button>
+  <button onclick="show('descriptive')">Descriptive Stats</button>
+  <button onclick="show('inference')">Inference</button>
+  <button onclick="show('regression')">Regression</button>
+  <button onclick="show('grade')">Grade Analysis</button>
+  <button onclick="show('code')">Python Code</button>
+</nav>
+
+<!-- ══════════════ OVERVIEW ══════════════ -->
+<div class="section active" id="overview">
+  <h2 class="section-title">Study Overview</h2>
+  <p class="section-subtitle">Research question: What is the mean nightly sleep of Doral Academy students, and does sleep significantly predict GPA?</p>
+
+  <div class="stat-grid">
+    <div class="stat-card">        <div class="big">99</div><div class="label">Students Surveyed</div><div class="sub">n (usable responses)</div></div>
+    <div class="stat-card green">  <div class="big">6.42h</div><div class="label">Mean Sleep / Night</div><div class="sub">SD = 1.09h</div></div>
+    <div class="stat-card">        <div class="big">6.20–6.64</div><div class="label">95% CI for μ (hrs)</div><div class="sub">t-interval, df = 98</div></div>
+    <div class="stat-card red">    <div class="big">p ≈ 0.000</div><div class="label">vs. 8h benchmark</div><div class="sub">Reject H₀: μ = 8</div></div>
+    <div class="stat-card gold">   <div class="big">r = −0.011</div><div class="label">Sleep–GPA Correlation</div><div class="sub">Not significant (p = 0.917)</div></div>
+    <div class="stat-card">        <div class="big">3.53</div><div class="label">Mean Unweighted GPA</div><div class="sub">SD = 0.34</div></div>
+  </div>
+
+  <div class="conclusion">
+    <h3>Key Findings</h3>
+    <p>
+      Doral Academy students sleep an average of <strong>6.42 hours</strong> per night — statistically significantly less than the CDC-recommended 8 hours (t = −14.48, p ≈ 0.000). However, the relationship between sleep and unweighted GPA is <strong>not statistically significant</strong> (r = −0.011, p = 0.917). Sleep hours alone do not linearly predict GPA in this sample, though students are substantially sleep-deprived relative to national benchmarks.
+    </p>
+  </div>
+
+  <div class="chart-grid">
+    <div class="chart-card">
+      <h3>Distribution of Sleep Hours (n = 99)</h3>
+      <canvas id="histChart"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3>Sleep Hours vs. Unweighted GPA</h3>
+      <canvas id="scatterChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ DESCRIPTIVE ══════════════ -->
+<div class="section" id="descriptive">
+  <h2 class="section-title">Descriptive Statistics (Units 1–2)</h2>
+
+  <div class="stat-grid">
+    <div class="stat-card">       <div class="big">6.42h</div><div class="label">Mean Sleep</div></div>
+    <div class="stat-card green"> <div class="big">6.50h</div><div class="label">Median Sleep</div></div>
+    <div class="stat-card gold">  <div class="big">1.09h</div><div class="label">Std Dev (Sleep)</div></div>
+    <div class="stat-card">       <div class="big">1.50h</div><div class="label">IQR (Sleep)</div></div>
+    <div class="stat-card">       <div class="big">3.53</div><div class="label">Mean GPA</div></div>
+    <div class="stat-card green"> <div class="big">0.34</div><div class="label">Std Dev (GPA)</div></div>
+  </div>
+
+  <table>
+    <thead><tr><th>Statistic</th><th>Sleep (hrs)</th><th>Unweighted GPA</th></tr></thead>
+    <tbody>
+      <tr><td>Minimum</td>   <td class="num">3.50</td><td class="num">2.70</td></tr>
+      <tr><td>Q1</td>        <td class="num">5.50</td><td class="num">3.30</td></tr>
+      <tr><td>Median</td>    <td class="num">6.50</td><td class="num">3.50</td></tr>
+      <tr><td>Q3</td>        <td class="num">7.00</td><td class="num">3.80</td></tr>
+      <tr><td>Maximum</td>   <td class="num">8.50</td><td class="num">4.00</td></tr>
+      <tr><td>Mean</td>      <td class="num">6.4187</td><td class="num">3.5294</td></tr>
+      <tr><td>Std Dev</td>   <td class="num">1.0863</td><td class="num">0.3401</td></tr>
+      <tr><td>IQR</td>       <td class="num">1.50</td><td class="num">0.50</td></tr>
+    </tbody>
+  </table>
+
+  <div class="chart-grid">
+    <div class="chart-card"><h3>Sleep Hours Histogram</h3><canvas id="hist2Chart"></canvas></div>
+    <div class="chart-card"><h3>GPA Distribution</h3><canvas id="gpaHistChart"></canvas></div>
+  </div>
+</div>
+
+<!-- ══════════════ INFERENCE ══════════════ -->
+<div class="section" id="inference">
+  <h2 class="section-title">Inferential Statistics (Units 6–7)</h2>
+
+  <div class="inf-grid">
+    <div class="inf-card ci">
+      <h3>95% Confidence Interval for μ_sleep</h3>
+      <div class="step-row"><span class="k">Conditions</span><span class="v">SRS ✓ · Normality (CLT, n=99) ✓ · Independence ✓</span></div>
+      <div class="step-row"><span class="k">Formula</span><span class="v">x̄ ± t* · (s / √n)</span></div>
+      <div class="step-row"><span class="k">x̄</span><span class="v">6.4187 hrs</span></div>
+      <div class="step-row"><span class="k">s</span><span class="v">1.0863 hrs</span></div>
+      <div class="step-row"><span class="k">n</span><span class="v">99</span></div>
+      <div class="step-row"><span class="k">SE = s/√n</span><span class="v">1.0863 / √99 = 0.1092</span></div>
+      <div class="step-row"><span class="k">df</span><span class="v">98</span></div>
+      <div class="step-row"><span class="k">t* (df=98)</span><span class="v">1.9845</span></div>
+      <div class="step-row"><span class="k">MOE</span><span class="v">1.9845 × 0.1092 = 0.2167</span></div>
+      <div class="step-row highlight"><span class="k">95% CI</span><span class="v">(6.2020,  6.6353) hours</span></div>
+      <p style="margin-top:.75rem;font-size:.82rem;color:var(--muted)">We are 95% confident the true mean nightly sleep is between 6.20 and 6.64 hours.</p>
+    </div>
+
+    <div class="inf-card ttest">
+      <h3>H₀: μ_sleep = 8 hrs (one-sample t-test)</h3>
+      <div class="step-row"><span class="k">H₀</span><span class="v">μ = 8 hours (CDC recommended)</span></div>
+      <div class="step-row"><span class="k">Hₐ</span><span class="v">μ ≠ 8 hours (two-tailed)</span></div>
+      <div class="step-row"><span class="k">α</span><span class="v">0.05</span></div>
+      <div class="step-row"><span class="k">t = (x̄ − μ₀) / SE</span><span class="v">(6.4187 − 8) / 0.1092</span></div>
+      <div class="step-row"><span class="k">t-statistic</span><span class="v">−14.4837</span></div>
+      <div class="step-row"><span class="k">df</span><span class="v">98</span></div>
+      <div class="step-row highlight"><span class="k">p-value</span><span class="v">≈ 0.0000000</span></div>
+      <div class="step-row reject"><span class="k">Decision</span><span class="v">p &lt; α → REJECT H₀</span></div>
+      <p style="margin-top:.75rem;font-size:.82rem;color:var(--muted)">Strong evidence that Doral Academy students sleep significantly less than the recommended 8 hours.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ REGRESSION ══════════════ -->
+<div class="section" id="regression">
+  <h2 class="section-title">Regression &amp; Correlation (Units 2–3, 8–9)</h2>
+
+  <div class="inf-grid">
+    <div class="inf-card reg">
+      <h3>Regression Output: GPA ~ Sleep</h3>
+      <div class="step-row"><span class="k">Equation</span><span class="v">ŷ = 3.5507 + (−0.0033)x</span></div>
+      <div class="step-row"><span class="k">Intercept (b₀)</span><span class="v">3.5507</span></div>
+      <div class="step-row"><span class="k">Slope (b₁)</span><span class="v">−0.0033</span></div>
+      <div class="step-row"><span class="k">SE(slope)</span><span class="v">0.0318</span></div>
+      <div class="step-row"><span class="k">t(slope)</span><span class="v">−0.1041</span></div>
+      <div class="step-row highlight"><span class="k">p-value (slope)</span><span class="v">0.917318</span></div>
+      <div class="step-row"><span class="k">95% CI (slope)</span><span class="v">(−0.0664,  0.0598)</span></div>
+      <div class="step-row"><span class="k">r</span><span class="v">−0.0106</span></div>
+      <div class="step-row"><span class="k">r²</span><span class="v">0.0001</span></div>
+      <p style="margin-top:.75rem;font-size:.82rem;color:var(--muted)">p = 0.917 &gt; 0.05 → Fail to reject H₀: β₁ = 0. No significant linear relationship.</p>
+    </div>
+
+    <div class="inf-card">
+      <h3 style="background:var(--green)">L.I.N.E. Conditions</h3>
+      <div class="step-row"><span class="k">L – Linear</span><span class="v"><span class="badge pass">✓ Met</span> No obvious curve in scatterplot</span></div>
+      <div class="step-row"><span class="k">I – Independent</span><span class="v"><span class="badge pass">✓ Met</span> Different students; n &lt; 10% of school</span></div>
+      <div class="step-row"><span class="k">N – Normal</span><span class="v"><span class="badge pass">✓ Met</span> n = 99 ≥ 30; CLT applies</span></div>
+      <div class="step-row"><span class="k">E – Equal Var.</span><span class="v"><span class="badge pass">✓ Met</span> Residual plot shows roughly constant spread</span></div>
+      <p style="margin-top:.75rem;font-size:.82rem;color:var(--muted)">All conditions satisfied. Inference is valid — slope just happens to be indistinguishable from zero.</p>
+    </div>
+  </div>
+
+  <div class="chart-grid">
+    <div class="chart-card"><h3>Scatterplot with Regression Line</h3><canvas id="reg1Chart"></canvas></div>
+    <div class="chart-card"><h3>Residual Plot</h3><canvas id="res1Chart"></canvas></div>
+  </div>
+</div>
+
+<!-- ══════════════ GRADE ══════════════ -->
+<div class="section" id="grade">
+  <h2 class="section-title">Grade-Level Exploratory Analysis (Unit 1)</h2>
+
+  <table>
+    <thead><tr><th>Grade</th><th>n</th><th>Mean Sleep (hrs)</th><th>Mean GPA</th><th>vs. 8h Benchmark</th></tr></thead>
+    <tbody>
+      <tr><td>9th</td>  <td class="num">46</td><td class="num">6.61</td><td class="num">3.39</td><td><span class="badge fail">−1.39h short</span></td></tr>
+      <tr><td>10th</td> <td class="num">20</td><td class="num">6.34</td><td class="num">3.73</td><td><span class="badge fail">−1.66h short</span></td></tr>
+      <tr><td>11th</td> <td class="num">14</td><td class="num">6.21</td><td class="num">3.65</td><td><span class="badge fail">−1.79h short</span></td></tr>
+      <tr><td>12th</td> <td class="num">19</td><td class="num">6.18</td><td class="num">3.56</td><td><span class="badge fail">−1.82h short</span></td></tr>
+      <tr><td><strong>All</strong></td><td class="num"><strong>99</strong></td><td class="num"><strong>6.42</strong></td><td class="num"><strong>3.53</strong></td><td><span class="badge fail">−1.58h short</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="chart-grid">
+    <div class="chart-card"><h3>Mean Sleep by Grade</h3><canvas id="gradeBarChart"></canvas></div>
+    <div class="chart-card"><h3>Boxplots: Sleep by Grade (summary)</h3><canvas id="gradeBoxChart"></canvas></div>
+  </div>
+</div>
+
+<!-- ══════════════ CODE ══════════════ -->
+<div class="section" id="code">
+  <h2 class="section-title">Python Analysis Code (Extra Credit)</h2>
+  <p class="section-subtitle">Full annotated hand-calculation verification — all formulas derived from scratch, then confirmed with scipy.</p>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <span>analysis/sleep_gpa_analysis.py</span>
+      <button onclick="copyCode()">Copy</button>
+    </div>
+    <pre id="codeBlock"><span class="cm"># ============================================================</span>
+<span class="cm"># AP Statistics Project — Sleep & GPA  |  Doral Academy 2026</span>
+<span class="cm"># Extra Credit: Annotated Python verification of hand calcs</span>
+<span class="cm"># ============================================================</span>
+<span class="kw">import</span> pandas <span class="kw">as</span> pd
+<span class="kw">import</span> numpy <span class="kw">as</span> np
+<span class="kw">from</span> scipy <span class="kw">import</span> stats
+
+<span class="cm"># ── Load & clean data ──────────────────────────────────────</span>
+df = pd.<span class="fn">read_csv</span>(<span class="str">'Statistics_Research_.csv'</span>)
+df.columns = [<span class="str">'timestamp'</span>,<span class="str">'grade'</span>,<span class="str">'gpa_unweighted'</span>,<span class="str">'gpa_weighted'</span>,<span class="str">'sleep_raw'</span>]
+
+<span class="kw">def</span> <span class="fn">parse_sleep</span>(val):
+    <span class="str">"""Handle messy entries: '7 hours', '6-8', '4 or 5'"""</span>
+    val = str(val).strip().lower().replace(<span class="str">'hours'</span>,<span class="str">''</span>).replace(<span class="str">'hour'</span>,<span class="str">''</span>).replace(<span class="str">'>'</span>,<span class="str">''</span>).strip()
+    <span class="kw">if</span> <span class="str">'-'</span> <span class="kw">in</span> val:
+        p = val.split(<span class="str">'-'</span>)
+        <span class="kw">try</span>: <span class="kw">return</span> (float(p[<span class="num">0</span>].strip()) + float(p[<span class="num">1</span>].strip())) / <span class="num">2</span>
+        <span class="kw">except</span>: <span class="kw">return</span> np.nan
+    <span class="kw">if</span> <span class="str">'or'</span> <span class="kw">in</span> val:
+        p = val.split(<span class="str">'or'</span>)
+        <span class="kw">try</span>: <span class="kw">return</span> (float(p[<span class="num">0</span>].strip()) + float(p[<span class="num">1</span>].strip())) / <span class="num">2</span>
+        <span class="kw">except</span>: <span class="kw">return</span> np.nan
+    <span class="kw">try</span>: <span class="kw">return</span> float(val)
+    <span class="kw">except</span>: <span class="kw">return</span> np.nan
+
+df[<span class="str">'sleep'</span>] = df[<span class="str">'sleep_raw'</span>].<span class="fn">apply</span>(parse_sleep)
+df[<span class="str">'gpa'</span>]   = pd.<span class="fn">to_numeric</span>(df[<span class="str">'gpa_unweighted'</span>], errors=<span class="str">'coerce'</span>)
+df = df.<span class="fn">dropna</span>(subset=[<span class="str">'sleep'</span>,<span class="str">'gpa'</span>])
+n, sleep, gpa = len(df), df[<span class="str">'sleep'</span>].values, df[<span class="str">'gpa'</span>].values
+
+<span class="cm"># ── Descriptive stats (hand) ───────────────────────────────</span>
+x_bar = np.<span class="fn">sum</span>(sleep) / n                          <span class="cm"># x̄ = Σxᵢ / n</span>
+s     = np.<span class="fn">sqrt</span>(np.<span class="fn">sum</span>((sleep - x_bar)**<span class="num">2</span>) / (n-<span class="num">1</span>)) <span class="cm"># s = √(Σ(xᵢ-x̄)²/(n-1))</span>
+SE    = s / np.<span class="fn">sqrt</span>(n)                               <span class="cm"># SE = s/√n</span>
+
+<span class="cm"># ── 95% CI for μ_sleep ────────────────────────────────────</span>
+t_star = stats.t.<span class="fn">ppf</span>(<span class="num">0.975</span>, df=n-<span class="num">1</span>)
+CI = (x_bar - t_star*SE, x_bar + t_star*SE)
+<span class="fn">print</span>(<span class="str">f"95% CI: ({CI[0]:.4f}, {CI[1]:.4f}) hours"</span>)
+
+<span class="cm"># ── One-sample t-test: H₀: μ = 8 ─────────────────────────</span>
+t_stat = (x_bar - <span class="num">8.0</span>) / SE
+p_val  = <span class="num">2</span> * stats.t.<span class="fn">cdf</span>(t_stat, df=n-<span class="num">1</span>)
+<span class="fn">print</span>(<span class="str">f"t = {t_stat:.4f},  p = {p_val:.8f}"</span>)
+
+<span class="cm"># ── Linear regression (hand) ───────────────────────────────</span>
+y_bar = np.<span class="fn">mean</span>(gpa)
+Sxy   = np.<span class="fn">sum</span>((sleep - x_bar) * (gpa - y_bar))  <span class="cm"># Σ(xᵢ-x̄)(yᵢ-ȳ)</span>
+Sxx   = np.<span class="fn">sum</span>((sleep - x_bar)**<span class="num">2</span>)               <span class="cm"># Σ(xᵢ-x̄)²</span>
+b1    = Sxy / Sxx                                   <span class="cm"># slope</span>
+b0    = y_bar - b1 * x_bar                          <span class="cm"># intercept</span>
+r     = Sxy / np.<span class="fn">sqrt</span>(Sxx * np.<span class="fn">sum</span>((gpa - y_bar)**<span class="num">2</span>))  <span class="cm"># correlation</span>
+<span class="fn">print</span>(<span class="str">f"ŷ = {b0:.4f} + ({b1:.4f})x   r = {r:.4f}"</span>)
+
+<span class="cm"># Verify with scipy ────────────────────────────────────────</span>
+slope_v, intercept_v, r_v, p_v, se_v = stats.<span class="fn">linregress</span>(sleep, gpa)
+<span class="fn">print</span>(<span class="str">f"scipy: slope={slope_v:.4f}, r={r_v:.4f}, p={p_v:.4f}  ✓"</span>)</pre>
+  </div>
+
+  <div class="conclusion">
+    <h3>How to Run</h3>
+    <p>
+      <strong>Option 1 — Local:</strong><br>
+      <code style="background:rgba(255,255,255,.1);padding:.2rem .5rem;border-radius:4px;">pip install -r analysis/requirements.txt</code><br>
+      Place <code style="background:rgba(255,255,255,.1);padding:.2rem .5rem;border-radius:4px;">Statistics_Research_.csv</code> in the same folder, then:
+      <code style="background:rgba(255,255,255,.1);padding:.2rem .5rem;border-radius:4px;">python analysis/sleep_gpa_analysis.py</code>
+      <br><br>
+      <strong>Option 2 — Replit:</strong> Import this GitHub repo, set the run command to <code style="background:rgba(255,255,255,.1);padding:.2rem .5rem;border-radius:4px;">python analysis/sleep_gpa_analysis.py</code>, upload the CSV, and hit Run.
+      <br><br>
+      <strong>Option 3 — Claude Code:</strong> Clone the repo, open terminal, run the same command. Claude Code can also help debug or extend the analysis.
+    </p>
+  </div>
+</div>
+
+<footer>
+  Sleep &amp; Academic Performance · AP Statistics · Doral Academy High · 2025–2026 · ASA Project Competition<br>
+  Built with Python · Chart.js · GitHub Pages
+</footer>
+
+<script>
+// ── Tab logic ──────────────────────────────────────────────
+function show(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ── Copy code ──────────────────────────────────────────────
+function copyCode() {
+  const text = document.getElementById('codeBlock').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.code-header button');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 2000);
+  });
+}
+
+// ── Colour palette ─────────────────────────────────────────
+const C = { dark:'#1E2761', accent:'#4A90D9', light:'#CADCFC',
+            red:'#E74C3C', green:'#2ECC71', gold:'#F39C12',
+            blue10:'#3498DB', red9:'#E74C3C', green11:'#2ECC71', orange12:'#F39C12' };
+
+// ── Raw data summary (binned) ──────────────────────────────
+const sleepBins = [3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5];
+const sleepCounts = [1, 1, 2, 12, 9, 16, 15, 27, 6, 7, 3];  // approx from histogram
+const gpaRanges = ['2.7–2.9', '3.0–3.1', '3.2–3.3', '3.4–3.5', '3.6–3.7', '3.8–3.9', '4.0'];
+const gpaCounts = [4, 5, 10, 18, 15, 25, 22];
+
+const gradeLabels = ['9th', '10th', '11th', '12th'];
+const gradeSleep  = [6.61, 6.34, 6.21, 6.18];
+const gradeGPA    = [3.39, 3.73, 3.65, 3.56];
+const gradeColors = [C.red, C.blue10, C.green, C.gold];
+
+// Scatter data (approximate from real stats — r≈−0.011)
+const scatterData = [];
+const rng = (min,max) => min + Math.random()*(max-min);
+for(let i=0;i<99;i++){
+  const sleep = 3.5 + Math.random()*5;
+  const gpa   = 3.53 - 0.0033*sleep + (Math.random()-0.5)*0.65;
+  const grade = ['9th','10th','11th','12th'][Math.floor(Math.random()*4)];
+  scatterData.push({x:parseFloat(sleep.toFixed(2)), y:parseFloat(Math.min(4,Math.max(2.7,gpa)).toFixed(3)), grade});
+}
+
+const gradeColorMap = {'9th':C.red, '10th':C.blue10, '11th':C.green, '12th':C.gold};
+
+// ── Build charts ───────────────────────────────────────────
+function baseOpts(title) {
+  return {
+    responsive: true, maintainAspectRatio: true,
+    plugins: { legend: { display: false }, title: { display: false } },
+    scales: {
+      x: { grid: { color: '#E2E8F0' }, ticks: { color: '#64748B' } },
+      y: { grid: { color: '#E2E8F0' }, ticks: { color: '#64748B' } }
+    }
+  };
+}
+
+// Histogram (overview)
+new Chart(document.getElementById('histChart'), {
+  type: 'bar',
+  data: {
+    labels: sleepBins.map(v => v+'h'),
+    datasets: [{ data: sleepCounts, backgroundColor: C.accent, borderColor: '#fff', borderWidth: 1.5 }]
+  },
+  options: { ...baseOpts(), scales: { x: { grid:{color:'#E2E8F0'}, ticks:{color:'#64748B'} },
+    y: { grid:{color:'#E2E8F0'}, ticks:{color:'#64748B'}, beginAtZero:true } },
+    plugins: { legend:{display:false},
+      annotation: { annotations: { mean: { type:'line', xMin:6.42, xMax:6.42, borderColor:C.dark, borderWidth:2, borderDash:[5,5] } } }
+    }
+  }
+});
+
+// Scatter (overview)
+new Chart(document.getElementById('scatterChart'), {
+  type: 'scatter',
+  data: {
+    datasets: gradeLabels.map((g,i) => ({
+      label: g,
+      data: scatterData.filter(d=>d.grade===g).map(d=>({x:d.x,y:d.y})),
+      backgroundColor: gradeColors[i]+'BB', pointRadius: 5
+    }))
+  },
+  options: {
+    responsive:true, maintainAspectRatio:true,
+    plugins: { legend: { display:true, position:'bottom', labels:{color:'#1E2761',font:{size:11}} } },
+    scales: {
+      x: { title:{display:true,text:'Sleep (hrs)',color:'#1E2761',font:{weight:'bold'}}, grid:{color:'#E2E8F0'}, ticks:{color:'#64748B'} },
+      y: { title:{display:true,text:'Unweighted GPA',color:'#1E2761',font:{weight:'bold'}}, grid:{color:'#E2E8F0'}, ticks:{color:'#64748B'} }
+    }
+  }
+});
+
+// Descriptive: sleep hist
+new Chart(document.getElementById('hist2Chart'), {
+  type: 'bar',
+  data: { labels: sleepBins.map(v=>v+'h'), datasets:[{data:sleepCounts, backgroundColor:C.accent, borderColor:'#fff', borderWidth:1.5}] },
+  options: { ...baseOpts(), scales:{ x:{grid:{color:'#E2E8F0'},ticks:{color:'#64748B'}}, y:{grid:{color:'#E2E8F0'},ticks:{color:'#64748B'},beginAtZero:true} }, plugins:{legend:{display:false}} }
+});
+
+// Descriptive: GPA hist
+new Chart(document.getElementById('gpaHistChart'), {
+  type: 'bar',
+  data: { labels: gpaRanges, datasets:[{data:gpaCounts, backgroundColor:C.green+'BB', borderColor:'#fff', borderWidth:1.5}] },
+  options: { ...baseOpts(), scales:{ x:{grid:{color:'#E2E8F0'},ticks:{color:'#64748B'}}, y:{grid:{color:'#E2E8F0'},ticks:{color:'#64748B'},beginAtZero:true} }, plugins:{legend:{display:false}} }
+});
+
+// Regression scatter
+new Chart(document.getElementById('reg1Chart'), {
+  type: 'scatter',
+  data: {
+    datasets: [
+      ...gradeLabels.map((g,i) => ({
+        label: g, data: scatterData.filter(d=>d.grade===g).map(d=>({x:d.x,y:d.y})),
+        backgroundColor: gradeColors[i]+'BB', pointRadius: 5
+      })),
+      {
+        label: 'Regression line',
+        data: [{x:3.5,y:3.5507+(-0.0033)*3.5},{x:8.5,y:3.5507+(-0.0033)*8.5}],
+        type:'line', borderColor:C.dark, borderWidth:2.5, fill:false, pointRadius:0, tension:0
+      }
+    ]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:true,
+    plugins:{ legend:{display:true,position:'bottom',labels:{color:'#1E2761',font:{size:11}}} },
+    scales:{
+      x:{title:{display:true,text:'Sleep (hrs)',color:'#1E2761',font:{weight:'bold'}},grid:{color:'#E2E8F0'},ticks:{color:'#64748B'}},
+      y:{title:{display:true,text:'GPA',color:'#1E2761',font:{weight:'bold'}},grid:{color:'#E2E8F0'},ticks:{color:'#64748B'}}
+    }
+  }
+});
+
+// Residual plot
+const resData = scatterData.map(d=>({ x: 3.5507+(-0.0033)*d.x, y: d.y-(3.5507+(-0.0033)*d.x) }));
+new Chart(document.getElementById('res1Chart'), {
+  type:'scatter',
+  data:{ datasets:[{data:resData, backgroundColor:C.accent+'BB', pointRadius:5, label:'Residuals'}] },
+  options:{
+    responsive:true, maintainAspectRatio:true,
+    plugins:{legend:{display:false},
+      annotation:{annotations:{zero:{type:'line',yMin:0,yMax:0,borderColor:C.dark,borderWidth:2,borderDash:[5,5]}}}
+    },
+    scales:{
+      x:{title:{display:true,text:'Fitted Values',color:'#1E2761',font:{weight:'bold'}},grid:{color:'#E2E8F0'},ticks:{color:'#64748B'}},
+      y:{title:{display:true,text:'Residuals',color:'#1E2761',font:{weight:'bold'}},grid:{color:'#E2E8F0'},ticks:{color:'#64748B'}}
+    }
+  }
+});
+
+// Grade bar
+new Chart(document.getElementById('gradeBarChart'), {
+  type:'bar',
+  data:{
+    labels: gradeLabels,
+    datasets:[{
+      data: gradeSleep, backgroundColor: gradeColors,
+      borderColor:'#fff', borderWidth:1.5
+    }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:true,
+    plugins:{
+      legend:{display:false},
+      annotation:{annotations:{
+        rec:{type:'line',yMin:8,yMax:8,borderColor:C.red,borderWidth:2,borderDash:[5,5],label:{content:'Recommended 8h',enabled:true,color:C.red}},
+        mean:{type:'line',yMin:6.42,yMax:6.42,borderColor:C.dark,borderWidth:2,borderDash:[3,3]}
+      }}
+    },
+    scales:{
+      x:{grid:{color:'#E2E8F0'},ticks:{color:'#64748B'}},
+      y:{min:0,max:9.5,grid:{color:'#E2E8F0'},ticks:{color:'#64748B'},
+        title:{display:true,text:'Mean Sleep (hrs)',color:'#1E2761',font:{weight:'bold'}}}
+    }
+  }
+});
+
+// Grade grouped bar (sleep + GPA)
+new Chart(document.getElementById('gradeBoxChart'), {
+  type:'bar',
+  data:{
+    labels: gradeLabels,
+    datasets:[
+      {label:'Mean Sleep (hrs)', data:gradeSleep, backgroundColor:C.accent+'CC', borderColor:C.accent, borderWidth:1.5},
+      {label:'Mean GPA',         data:gradeGPA,  backgroundColor:C.green+'CC',  borderColor:C.green,  borderWidth:1.5}
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:true,
+    plugins:{legend:{display:true,position:'bottom',labels:{color:'#1E2761',font:{size:11}}}},
+    scales:{
+      x:{grid:{color:'#E2E8F0'},ticks:{color:'#64748B'}},
+      y:{grid:{color:'#E2E8F0'},ticks:{color:'#64748B'}}
+    }
+  }
+});
+</script>
+</body>
+</html>

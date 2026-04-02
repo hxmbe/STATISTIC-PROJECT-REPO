@@ -1,0 +1,49 @@
+# HOW TO PUT THIS ON GITHUB (browser only, no terminal needed)
+# ============================================================
+# 5 steps. Takes about 3 minutes.
+# ============================================================
+
+STEP 1 — Create a new GitHub repo
+  1. Go to github.com and sign in
+  2. Click the "+" icon (top right) → "New repository"
+  3. Name it: sleep-gpa-stats
+  4. Set it to Public (so your teacher can see it)
+  5. Check "Add a README file"
+  6. Click "Create repository"
+
+STEP 2 — Upload the analysis folder
+  1. On your new repo page, click "Add file" → "Upload files"
+  2. Drag and drop ALL files from the repo ZIP you downloaded:
+       README.md
+       analysis/sleep_gpa_analysis.py
+       analysis/requirements.txt
+       dashboard/index.html
+       dashboard/fig1_sleep_histogram.png
+       dashboard/fig2_scatter_regression.png
+       dashboard/fig3_gpa_boxplot_by_sleep.png
+       dashboard/fig4_residuals.png
+       dashboard/results_summary.csv
+  3. At the bottom, click "Commit changes"
+
+STEP 3 — Upload your data file
+  1. Click "Add file" → "Upload files" again
+  2. Create a folder called "data" by typing "data/" before the filename
+     when GitHub asks where to put it
+  3. Upload: Statistics_Research_.csv
+  4. Click "Commit changes"
+
+STEP 4 — Enable GitHub Pages (makes the dashboard live)
+  1. Click "Settings" (top tab of your repo)
+  2. Click "Pages" (left sidebar)
+  3. Under "Source", select: "Deploy from a branch"
+  4. Branch: main, Folder: /dashboard
+  5. Click "Save"
+  6. Wait 1-2 minutes, then your dashboard is live at:
+     https://YOUR_USERNAME.github.io/sleep-gpa-stats/
+
+STEP 5 — Share the link with your teacher
+  Your repo link:  https://github.com/YOUR_USERNAME/sleep-gpa-stats
+  Your dashboard:  https://YOUR_USERNAME.github.io/sleep-gpa-stats/
+
+  That's it. Your teacher can see the code, run the script,
+  and view the interactive dashboard — all from one link.
